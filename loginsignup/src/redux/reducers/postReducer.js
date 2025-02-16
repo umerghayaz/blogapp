@@ -44,7 +44,6 @@ const postSlice = createSlice({
           state.post = [];
         });
       builder.addCase(getSinglePost.fulfilled, (state, action) => {
-        console.log(action.payload);
           state.post = action.payload.post;
           state.loading = false;
         });

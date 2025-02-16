@@ -16,9 +16,9 @@ const LoginDumy = () => {
     if (singleUser?.roles?.some((role) => role.roleName === "Admin")) {
       navigate("/admin/blogcontrol");
     } else if (singleUser?.roles?.some((role) => role.roleName === "Guest")) {
-      navigate("/blog");
+      navigate("/");
     } else if (singleUser?.roles?.some((role) => role.roleName === "Editor")) {
-      navigate("/blog");
+      navigate("/");
     }
   }, [singleUser, navigate]);
 

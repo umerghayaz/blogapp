@@ -3,21 +3,24 @@ import { Form, Input, Button, Card, Select } from "antd";
 import { useDispatch, useSelector } from "react-redux";
 import { createPost } from "../redux/actions/postAction";
 import Header from "./Header";
+import { useNavigate } from "react-router-dom";
 
 const PostForm = () => {
     const [loading, setLoading] = useState(false);
     const dispatch = useDispatch();
-    const { user } = useSelector((state) => state.user);
-
+    const { user,singleUser } = useSelector((state) => state.user);
+    const navigate = useNavigate()
     const onFinish = async (values) => {
+        console.log('user id',singleUser?._id)
         let payload = {
             title: values.title,
             content: values.content,
             categories: values.category,  // Fixed this key
             featuredImage: values.image,
-            author: user?.user?._id,  // Added safe check
+            author: singleUser?._id,  // Added safe check
         };
         dispatch(createPost(payload));
+        navigate('/')
     };
 
     return (
