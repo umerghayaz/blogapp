@@ -1,17 +1,19 @@
 import jwt from "jsonwebtoken";
-import User from "../model/user.model";
 import cookieParser from "cookie-parser";
 import express from "express";
+import db from "../model/modelindex.js";
 
 const app = express()
 app.use(cookieParser());
+const User = db.User;
 
 export const protectRoute = async (req, res, next) => {
   try {
-    console.log(req.cookies)
     // const accessToken = req.cookies.accessToken;
     // const authHeader = req.headers["authorization"];
     // const accessToken = authHeader.split(" ")[1];
+    // console.log( 'inside cookies',req.cookies);
+    
     const accessToken = req.cookies.accessToken;
 
     if (!accessToken) {
@@ -21,8 +23,12 @@ export const protectRoute = async (req, res, next) => {
     }
     try {
       const decoded = jwt.verify(accessToken, process.env.ACCESS_TOKEN_SECRET);
-      const user = await User.findById(decoded.userId).select("-password");
-      if (!user) {
+      const user = await User.findOne({
+        where: { id: decoded.userId },
+        attributes: { exclude: ["password"] }, // Exclude password from the result
+      });
+      // console.log('user',user)
+            if (!user) {
         return res.status(401).json({ message: "User not found" });
       }
       req.user = user;
@@ -44,7 +50,7 @@ export const protectRoute = async (req, res, next) => {
 };
 
 export const adminRoute = (req, res, next) => {
-  if (req.user && req.user.role === "admin") {
+  if (req.user && req.user.dataValues.roleId === 1) {
     next();
   } else {
     return res.status(403).json({ message: "Access denied - Admin only" });

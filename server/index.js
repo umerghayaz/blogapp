@@ -1,42 +1,43 @@
 // const express = require("express")
 import express from "express";
-import dotenv from "dotenv";
+import bodyParser from "body-parser";
 import cors from "cors";
-import userRoute from "./Routes/userRoute.js"
-import permissionRoute from "./Routes/permissionRoute.js"
-import roleRoute from "./Routes/roleRoute.js"
-import rolepermissionRoute from "./Routes/rolepermissionRoute.js"
+import postRoute from "./Routes/postRoute.js";
+import dotenv from "dotenv";
 import cookieParser from "cookie-parser";
-import postRoute from "./Routes/postRoute.js"
-// import authRoutes from "./routes/authRoutes.js";
-// signup
-// const EmployeeModel = require("./model/Employee")
-import {connectDB} from './lib/db.js'
+dotenv.config();
+// import {User} from "./model/user.js";
+// User
+import sequelize from "./model/modelindex.js";
+import User from "./model/user.js";
+import userRoute from "./Routes/userRoute.js";
+import roleRouter from "./Routes/roleRoute.js";
+import permissionRouter from "./Routes/permissionRoute.js";
+
 // import  {signup}  from "./Controllers/userController.js";
 const app = express()
-dotenv.config();
-const PORT = process.env.PORT;
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(cookieParser('MY SECRET'));
-
-const corsOptions = {
-  origin: "http://localhost:5173",
-    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
-   credentials: true,
-};
-app.use( cors({
-  origin: "http://localhost:5173", // Frontend URL
-  credentials: true, // Allow cookies
-}));
-// app.use(cors(corsOptions));
-
+app.use(cookieParser());
+// app.use(router);
 app.use("/api/users", userRoute);
-app.use("/api/permissions", permissionRoute); 
-app.use("/api/roles", roleRoute);
-app.use("/api/rolepermissions", rolepermissionRoute);
 app.use("/api/posts", postRoute);
-app.listen(5000, () => {
-    console.log(`server is runing on port ${PORT}`);
-    connectDB();
+// Mount role and permission routes
+app.use("/api/roles", roleRouter);
+app.use("/api/permissions", permissionRouter);
+
+ 
+    
+const corsOptions = {
+  credentials: true,
+  ///..other options
+};
+app.use(cors(corsOptions));
+
+
+// User.sync();
+app.listen(7000, () => {
+    console.log(`server is runing on port ${7000}`);
+    // connectDB();
   });

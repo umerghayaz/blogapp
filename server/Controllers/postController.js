@@ -1,202 +1,165 @@
-import { Post } from "../model/post.model.js";
-import User from "../model/user.model.js";
+import { QueryTypes } from "sequelize";
+import db from "../model/modelindex.js"; // assuming this exports { sequelize, db }
+const { sequelize } = db;
+const Post = db.Post;
 
-// Create a new post
-export const createPost = async (req, res) => {
-  try {
-    const { title, content, author, categories, tags, featuredImage } = req.body;
-
-    // Create a new post
-    const newPost = await Post.create({
-      title,
-      content,
-      author,
-      categories,
-      tags,
-      featuredImage,
-    });
-
-    res.status(201).json({
-      success: true,
-      message: "Post created successfully",
-      post: newPost,
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: "Failed to create post",
-      error: error.message,
-    });
-  }
-};
-
-// Get all posts
+/**
+ * Get all posts with author details
+ */
 export const getAllPosts = async (req, res) => {
   try {
-    const posts = await Post.find().populate("author", "name email").populate("approvedBy", "name email")
-    .exec();
+    // Joining posts with users table to include author details
+    // const posts = await sequelize.query(
+    //   `SELECT 
+    //      posts.*,
+    //      users.id AS authorId,
+    //      users.name AS authorName,
+    //      users.email AS authorEmail
+    //    FROM posts 
+    //    LEFT JOIN users ON posts.authorId = users.id`,
+    //   {
+    //     type: QueryTypes.SELECT,
+    //   }
+    // );
+    // You can get pagination parameters from the query string, for example:
+    // const limit = parseInt(req.query.limit) || 10;
+    // const offset = parseInt(req.query.offset) || 0;
+
+    // // Use findAndCountAll to get both the rows and the total count.
+    // const { count, rows } = await Post.findAndCountAll({
+    //   where: { status: "draft" }, // Example condition; adjust as needed
+    //   limit,
+    //   offset,
+    //   order: [["createdAt", "DESC"]],
+    // });
+    const [post, created] = await Post.findOrCreate({
+      where: { categories: 'draft1' },
+      defaults: {
+        title: 'My new Post',
+        content:'This is the content of my awesome post. ',
+        authorId:1
+      },
+    });
+
     res.status(200).json({
-      success: true,
-      posts,
+      created: created,
+      posts: post,
     });
+    // res.status(200).json({ count });
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: "Failed to fetch posts",
-      error: error.message,
-    });
+    console.error("Error fetching posts:", error);
+    res.status(500).json({ error: error.message });
   }
 };
 
-// Get a single post by ID
+/**
+ * Get a single post by ID with author details
+ */
 export const getPostById = async (req, res) => {
+  const { id } = req.params;
   try {
-    const postId = req.params.id;
-    const post = await Post.findById(postId)
-      .populate("author", "name email")
-      .populate("comments.user", "name email")
-      .populate("approvedBy", "name email") 
-    if (!post) {
-      return res.status(404).json({
-        success: false,
-        message: "Post not found",
-      });
+    const posts = await sequelize.query(
+      `SELECT 
+         posts.*,
+         users.id AS authorId,
+         users.name AS authorName,
+         users.email AS authorEmail
+       FROM posts 
+       LEFT JOIN users ON posts.authorId = users.id
+       WHERE posts.id = ? LIMIT 1`,
+      {
+        replacements: [id],
+        type: QueryTypes.SELECT,
+      }
+    );
+    if (posts.length === 0) {
+      return res.status(404).json({ message: "Post not found" });
     }
-
-    res.status(200).json({
-      success: true,
-      post,
-    });
+    res.status(200).json({ post: posts[0] });
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: "Failed to fetch post",
-      error: error.message,
-    });
+    console.error("Error fetching post:", error);
+    res.status(500).json({ error: error.message });
   }
 };
 
-// Update a post
+/**
+ * Create a new post
+ * Expects: title, content, author (ID), categories, featuredImage in req.body
+ */
+export const createPost = async (req, res) => {
+  const { title, content, author, categories, featuredImage } = req.body;
+  try {
+    const result = await sequelize.query(
+      `INSERT INTO posts 
+         (title, content, authorId, categories, featuredImage, createdAt, updatedAt)
+       VALUES (?, ?, ?, ?, ?, NOW(), NOW())`,
+      {
+        replacements: [title, content, author, categories, featuredImage],
+        type: QueryTypes.INSERT,
+      }
+    );
+    res.status(201).json({ message: "Post created successfully", postId: result[0] });
+  } catch (error) {
+    console.error("Error creating post:", error);
+    res.status(500).json({ error: error.message });
+  }
+};
+
+/**
+ * Update an existing post by ID
+ * Expects: title, content, categories, featuredImage, status in req.body
+ */
+
 export const updatePost = async (req, res) => {
+  const { id } = req.params;
+  let { title, content, categories, featuredImage, status } = req.body;
+
   try {
-    const postId = req.params.id;
-    const updates = req.body;
+    // Ensure all fields have a default value to avoid "undefined" errors
+    categories = categories ? JSON.stringify(categories) : "[]"; // Convert array to string if necessary
+    title = title || "";
+    content = content || "";
+    featuredImage = featuredImage || null;
+    status = status || "draft"; // Set a default status
 
-    const updatedPost = await Post.findByIdAndUpdate(postId, updates, {
-      new: true,
-      runValidators: true,
-    }).exec();
+    const [result] = await sequelize.query(
+      `UPDATE posts
+       SET title = ?, content = ?, categories = ?, featuredImage = ?, status = ?, updatedAt = NOW()
+       WHERE id = ?`,
+      {
+        replacements: [title, content, categories, featuredImage, status, id],
+        type: QueryTypes.UPDATE,
+      }
+    );
 
-    if (!updatedPost) {
-      return res.status(404).json({
-        success: false,
-        message: "Post not found",
-      });
+    if (result === 0) {
+      return res.status(404).json({ message: "Post not found or no changes made" });
     }
 
-    res.status(200).json({
-      success: true,
-      message: "Post updated successfully",
-      post: updatedPost,
-    });
+    res.status(200).json({ message: "Post updated successfully" });
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: "Failed to update post",
-      error: error.message,
-    });
+    console.error("Error updating post:", error);
+    res.status(500).json({ error: error.message });
   }
 };
 
-// Delete a post
+
+/**
+ * Delete a post by ID
+ */
 export const deletePost = async (req, res) => {
+  const { id } = req.params;
   try {
-    const postId = req.params.id;
-
-    const deletedPost = await Post.findByIdAndDelete(postId).exec();
-
-    if (!deletedPost) {
-      return res.status(404).json({
-        success: false,
-        message: "Post not found",
-      });
-    }
-
-    res.status(200).json({
-      success: true,
-      message: "Post deleted successfully",
-      post: deletedPost,
-    });
+    await sequelize.query(
+      "DELETE FROM posts WHERE id = ?",
+      {
+        replacements: [id],
+        type: QueryTypes.DELETE,
+      }
+    );
+    res.status(200).json({ message: "Post deleted successfully" });
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: "Failed to delete post",
-      error: error.message,
-    });
-  }
-};
-
-// Approve a post
-export const approvePost = async (req, res) => {
-  try {
-    const postId = req.params.id;
-    const { approvedBy } = req.body;
-
-    const post = await Post.findByIdAndUpdate(
-      postId,
-      { isApproved: true, approvedBy },
-      { new: true, runValidators: true }
-    ).exec();
-
-    if (!post) {
-      return res.status(404).json({
-        success: false,
-        message: "Post not found",
-      });
-    }
-
-    res.status(200).json({
-      success: true,
-      message: "Post approved successfully",
-      post,
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: "Failed to approve post",
-      error: error.message,
-    });
-  }
-};
-
-// Add a comment to a post
-export const addComment = async (req, res) => {
-  try {
-    const postId = req.params.id;
-    const { userId, content } = req.body;
-
-    const post = await Post.findById(postId);
-
-    if (!post) {
-      return res.status(404).json({
-        success: false,
-        message: "Post not found",
-      });
-    }
-
-    post.comments.push({ user: userId, content });
-    await post.save();
-
-    res.status(200).json({
-      success: true,
-      message: "Comment added successfully",
-      post,
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: "Failed to add comment",
-      error: error.message,
-    });
+    console.error("Error deleting post:", error);
+    res.status(500).json({ error: error.message });
   }
 };
