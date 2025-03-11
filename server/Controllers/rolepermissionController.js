@@ -7,7 +7,7 @@ export const createRolePermission = async (req, res) => {
     res.status(201).json({ message: "Permission assigned to role", rolePermission });
   } catch (error) {
     res.status(500).json({ message: "Error assigning permission to role", error: error.message });
-  }3
+  }
 };
 // Get all role-permission mappings
 export const getRolePermission = async (req, res) => {
