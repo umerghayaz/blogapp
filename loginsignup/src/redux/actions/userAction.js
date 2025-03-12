@@ -99,8 +99,8 @@ export const getAllUsers = createAsyncThunk("getAllUsers", async (data) => {
       "Content-Type": "application/json",
     }}
       );
-    console.log(res.data);
-    return res.data;
+    console.log(res.data.users);
+    return res.data.users;
   } catch (error) {
     return isRejectedWithValue(error.response);
   }
@@ -110,16 +110,11 @@ export const editUser = createAsyncThunk("editUser", async (data) => {
   try {
     let payload  = {
       "name": data.name,
-      "email": data.email,
-      "roles": [
-        {
-          "roleName": data.role,
-          "roleId": data.idValue
-        }
-      ]
+      "roleName": data.role,
+      "roleId": data.idValue
     }
     
-    const res = await API.put( `/users/${data._id}`,
+    const res = await API.put( `/users/${data.id}`,
       payload,
       { withCredentials: true, headers: {
       "Content-Type": "application/json",

@@ -39,12 +39,12 @@ const setCookies = (res, accessToken, refreshToken) => {
 };
 export const getAllUser = async (req, res) => {
   try {
-    const users = await sequelize.query('SELECT * FROM `users`', {
-      logging: console.log,
-      type: QueryTypes.SELECT,
-    });      
+    let users = await sequelize.query(
+      "SELECT users.id, users.name, users.email, users.createdAt, users.updatedAt, roles.roleName, roles.description,users.roleId FROM users INNER JOIN roles ON roles.id = users.roleId;",
+      { type: sequelize.QueryTypes.SELECT }
+    );
     if (!users) {
-      return res.status(500).json({ message: "User Not Found" });
+      return res.status(500).json({ message: "Users Not Found" });
     }
     res.status(200).json({ users });
   } catch (error) {
@@ -99,23 +99,28 @@ const generateTokens = (userId) => {
 
   return { accessToken, refreshToken };
 };
-export const getUserById = async(req, res) => {
+export const getUserById = async (req, res) => {
   const id = req.params.id;
   try {
-    let [results] = await sequelize.query("SELECT users.*, roles.roleName, roles.description FROM users INNER JOIN roles ON roles.id = users.roleId WHERE users.id = ?",
-       { replacements: [id], type: sequelize.QueryTypes.SELECT });
-    let user = results    
-      if(!user) {
-          res.status(500).json({message: "User Not Found"})
-      }
-      res.status(201).json({ 
-        success: true,
-        user
-      })
+    let [user] = await sequelize.query(
+      "SELECT users.*, roles.roleName, roles.description FROM users INNER JOIN roles ON roles.id = users.roleId WHERE users.id = ?",
+      { replacements: [id], type: sequelize.QueryTypes.SELECT }
+    );
+
+    if (!user) {
+      return res.status(404).json({ message: "User Not Found" }); // ✅ Added return to prevent further execution
+    }
+
+    return res.status(200).json({ 
+      success: true,
+      user
+    });
+
   } catch (error) {
-    res.status(500).json({error: error.message });
+    return res.status(500).json({ error: error.message });
   }
-}
+};
+
 export const deleteUser = async(req, res) => {
   const id = req.params.id;
 
@@ -182,20 +187,24 @@ export const updateUser = async (req, res) => {
 };
 export const logout = async (req, res) => {
   try {
-    console.log(req)
     const refreshToken = req.cookies.refreshToken;
+
     if (refreshToken) {
-      const decoded = jwt.verify(
-        refreshToken,
-        process.env.REFRESH_TOKEN_SECRET
-      );
+      try {
+        jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET);
+      } catch (err) {
+        console.log("Invalid Refresh Token:", err.message);
+        return res.status(400).json({ message: "Invalid refresh token" });
+      }
+
+      res.clearCookie("accessToken");
+      res.clearCookie("refreshToken");
+      return res.json({ message: "Logged out successfully" });
     }
 
-    res.clearCookie("accessToken");
-    res.clearCookie("refreshToken");
-    res.json({ message: "Logged out successfully" });
+    return res.status(400).json({ message: "No refresh token found" });
   } catch (error) {
     console.log("Error in logout controller", error.message);
-    res.status(500).json({ message: "Server error", error: error.message });
+    return res.status(500).json({ message: "Server error", error: error.message });
   }
 };

@@ -25,9 +25,8 @@ const Header = ({ title }) => {
   const menuItems = [{ key: "home", label: <Link to="/">Home</Link> }];
   if (
     singleUser &&
-    singleUser.roles?.some(
-      (role) =>  role.roleName === "Admin"
-    )
+    singleUser.roleName === "Admin"
+    
   ) {
     menuItems.push({
       key: "create-post",
@@ -42,9 +41,8 @@ const Header = ({ title }) => {
   }
   if (
     singleUser &&
-    singleUser.roles?.some(
-      (role) => role.roleName === "Editor" 
-    )
+    singleUser.roleName === "Editor" 
+    
   ) {
     menuItems.push({
       key: "create-post",

@@ -59,12 +59,12 @@ const UsersTable = () => {
   const handleRoleChange = (value) => {
     setRole(value); // Update the selected role
     if (value === "Admin") {
-      setIdValue("678e8d294733b11ba04f2d16");
+      setIdValue("1");
   } else if (value === "Guest") {
-    setIdValue("678fea167acec4ca56115376");
+    setIdValue("3");
     } 
     else if (value === "Editor") {
-      setIdValue("678fea267acec4ca56115378");
+      setIdValue("2");
     }
     // setIdValue(idValue); // Update local state
     form.setFieldsValue({ idValue: idValue }); // Update Ant Design Form
@@ -107,20 +107,23 @@ const UsersTable = () => {
   }, [dispatch]);
 
   useEffect(() => {
+    console.log('user',allUsers);
     if (allUsers && Array.isArray(allUsers)) {
       setFilteredUsers(allUsers); // Update the filtered list when allUsers changes
     }
   }, [allUsers]);
 
   useEffect(() => {
+    console.log('user',allUsers);
+    
     // Update form fields when `user` changes
     if (user) {
       form.setFieldsValue({
         name: user.name,
         email: user.email,
-        role: user.roles?.[0]?.roleName || "",
-        _id: user._id,
-        idValue:user.roles?.[0]?.roleId || ""
+        role: user.roleName || "",
+        id: user.id,
+        idValue:user.roleId || ""
       });
     }
   }, [user, form,idValue]);
@@ -152,11 +155,11 @@ const UsersTable = () => {
           () => {
           form
             .validateFields()
-            .then((values) => {
+            .then(async (values) => {
               console.log('values',values)
-              dispatch(editUser(values))
+              await dispatch(editUser(values));  // Ensure editUser completes first
+              dispatch(getAllUsers())
               hideModal();
-              // dispatch(getAllUsers())
 
             })
             .catch((info) => console.error("Validation Failed:", info));
@@ -181,27 +184,13 @@ const UsersTable = () => {
           </Form.Item>
 
           <Form.Item
-            label="Email"
-            name="email"
-            rules={[
-              {
-                required: true,
-                type: "email",
-                message: "Please enter a valid email",
-              },
-            ]}
-          >
-            <Input placeholder="Enter user email" />
-          </Form.Item>
-
-          <Form.Item
         label="Role"
         name="role"
         rules={[{ required: true, message: "Please select a role" }]}
       >
         <Select
           placeholder="Select Role"
-          value={role || user?.roles?.[0]?.roleName} // Set default value correctly
+          value={role || user?.roleName} // Set default value correctly
           onChange={handleRoleChange} // Dynamically update role value
         >
           <Select.Option value="Admin">Admin</Select.Option>
@@ -209,7 +198,7 @@ const UsersTable = () => {
           <Select.Option value="Guest">Guest</Select.Option>
         </Select>
       </Form.Item>
-          <Form.Item label="_id" name="_id" hidden>
+          <Form.Item label="id" name="id" hidden>
             <Input placeholder="Enter user role" />
           </Form.Item>
           <Form.Item
@@ -264,7 +253,7 @@ const UsersTable = () => {
           <tbody className="divide-y divide-gray-700">
             {filteredUsers.map((user) => (
               <motion.tr
-                key={user._id}
+                key={user.id}
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ duration: 0.3 }}
@@ -289,17 +278,17 @@ const UsersTable = () => {
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-800 text-blue-100">
-                    {user?.roles?.[0]?.roleName || "N/A"}
+                    {user?.roleName || "N/A"}
                   </span>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
                   <button
                     className="text-indigo-400 hover:text-indigo-300 mr-2"
-                    onClick={() => showEditModal(user._id)}
+                    onClick={() => showEditModal(user.id)}
                   >
                     Edit
                   </button>
-                  <button className="text-red-400 hover:text-red-300" onClick={() => showModal(user._id)}>
+                  <button className="text-red-400 hover:text-red-300" onClick={() => showModal(user.id)}>
                     Delete
                   </button>
                 </td>

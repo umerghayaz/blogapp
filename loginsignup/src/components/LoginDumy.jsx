@@ -13,11 +13,12 @@ const LoginDumy = () => {
   const [message, setMessage] = useState("");
 
   useEffect(() => {
-    if (singleUser?.roles?.some((role) => role.roleName === "Admin")) {
+    console.log('inside login',singleUser)
+    if (singleUser?.roleName === "Admin") {
       navigate("/admin/blogcontrol");
-    } else if (singleUser?.roles?.some((role) => role.roleName === "Guest")) {
+    } else if (singleUser?.roleName === "Guest") {
       navigate("/");
-    } else if (singleUser?.roles?.some((role) => role.roleName === "Editor")) {
+    } else if (singleUser?.roleName=== "Editor") {
       navigate("/");
     }
   }, [singleUser, navigate]);

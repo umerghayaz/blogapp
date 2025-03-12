@@ -20,6 +20,16 @@ const app = express()
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
+    
+const corsOptions = {
+  origin: "http://localhost:5173",
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+   credentials: true,
+};
+app.use( cors({
+  origin: "http://localhost:5173", // Frontend URL
+  credentials: true, // Allow cookies
+}));
 // app.use(router);
 app.use("/api/users", userRoute);
 app.use("/api/posts", postRoute);
@@ -28,12 +38,7 @@ app.use("/api/roles", roleRouter);
 app.use("/api/permissions", permissionRouter);
 
  
-    
-const corsOptions = {
-  credentials: true,
-  ///..other options
-};
-app.use(cors(corsOptions));
+
 
 
 // User.sync();
