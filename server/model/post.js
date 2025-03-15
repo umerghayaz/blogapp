@@ -27,6 +27,14 @@ export default (sequelize) => {
         type: DataTypes.BOOLEAN,
         defaultValue: false,
       },
+      approverId: {
+        type: DataTypes.INTEGER, // or DataTypes.UUID if using UUIDs
+        allowNull: true, // Can be null if not yet approved
+        references: {
+          model: "users", // Reference the 'users' table
+          key: "id",
+        },
+      },
       status: {
         type: DataTypes.ENUM("draft", "published", "archived"),
         defaultValue: "draft",
@@ -39,18 +47,13 @@ export default (sequelize) => {
         type: DataTypes.STRING,
       },
       authorId: {
-        type: DataTypes.INTEGER, // or DataTypes.UUID if you use UUIDs
+        type: DataTypes.INTEGER, // or DataTypes.UUID
         allowNull: false,
-        // If you want to enforce foreign key constraints, you can add:
         references: {
-          model: "users", // name of Target model/table
-          key: "id",      // key in Target model that we're referencing
+          model: "users",
+          key: "id",
         },
       },
-      
-      // For comments, you could either add a JSON field (if comments remain embedded)
-      // or create a separate Comment model. For one-to-many in a relational DB,
-      // it is recommended to create a separate model.
     },
     {
       sequelize,
@@ -58,7 +61,7 @@ export default (sequelize) => {
       modelName: "Post",
       tableName: "posts",
       timestamps: true,
-      deletedAt: 'destroyTime',
+      deletedAt: "destroyTime",
     }
   );
 

@@ -10,7 +10,7 @@ const BlogPage = () => {
   const dispatch = useDispatch();
 
   useEffect(() => {
-    dispatch(getAllPosts());
+     dispatch(getAllPosts());
   }, [dispatch]);
 
   if (loading) {
@@ -38,11 +38,11 @@ const BlogPage = () => {
             {allPosts?.length > 0 ? (
               allPosts.map((post) => (
                 <motion.div
-                  key={post._id}
+                  key={post.id}
                   whileHover={{ scale: 1.03 }}
                   className="bg-gray-800 shadow-lg rounded-2xl overflow-hidden transition transform hover:shadow-2xl"
                 >
-                  <Link to={`/blog/${post._id}`}>
+                  <Link to={`/blog/${post.id}`}>
                     <motion.img
                       alt={post.title}
                       src={post.featuredImage}
@@ -56,7 +56,7 @@ const BlogPage = () => {
                     <time dateTime={formatDate(post.createdAt)} className="block text-xs text-gray-400">
                       {formatDate(post.createdAt)}
                     </time>
-                    <Link to={`/blog/${post._id}`} className="hover:underline">
+                    <Link to={`/blog/${post.id}`} className="hover:underline">
                       <h3 className="mt-2 text-xl text-white font-semibold">{post.title}</h3>
                     </Link>
                     <p className="mt-2 text-gray-400 line-clamp-3 text-sm">{post.content}</p>

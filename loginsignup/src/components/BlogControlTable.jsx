@@ -31,7 +31,6 @@ const BlogControlTable = () => {
       console.error("Error fetching singleUser:", error);
     }
   };
-
   const showModal = (id) => {
     setOpen1(true);
     setPostID(id)
@@ -48,7 +47,7 @@ const BlogControlTable = () => {
     try {
       // Uncomment and use your actual delete action:
       // await dispatch(deleteUser(userToDelete));
-      dispatch(deletePost(postID))
+      await dispatch(deletePost(postID))
       console.log("Deleting singleUser with ID:");
       await dispatch(getAllPosts());
     } catch (error) {
@@ -77,8 +76,9 @@ const BlogControlTable = () => {
         content: post.content || "",
         isApproved: post.isApproved ?? false,  // Ensure it's boolean
         status: post?.status || "",
+        categories: post?.categories || "",
       });
-      console.log('singleUser',singleUser?._id)
+      console.log('singleUser',singleUser?.id)
     }
   }, [post, form,singleUser]);
   useEffect(() => {
@@ -123,7 +123,7 @@ const BlogControlTable = () => {
           () => {
           form
             .validateFields()
-            .then((values) => {
+            .then(async(values) => {
             console.log('values',values,values.status)
 
              let payload = {
@@ -132,15 +132,14 @@ const BlogControlTable = () => {
                 "status": values.status,
                 "categories": values.categories,
                 "featuredImage": values.image,
-                "isApproved": values.isApproved,
-                "approvedBy":singleUser?._id,
+                "approvedBy":values.isApproved ? singleUser?.id :"",
                 "postID": postID
               }
               console.log('payload',payload)
 
-              dispatch(editlePost(payload))
+              await dispatch(editlePost(payload))
               hideModal();
-              dispatch(getAllPosts())
+              await dispatch(getAllPosts())
 
             })
             .catch((info) => console.error("Validation Failed:", info));
@@ -172,6 +171,19 @@ const BlogControlTable = () => {
                 required: true,
                 type: "title",
                 message: "Please enter a valid title",
+              },
+            ]}
+          >
+            <Input placeholder="Enter singleUser title" />
+          </Form.Item>
+          <Form.Item
+            label="Categories"
+            name="categories"
+            rules={[
+              {
+                required: true,
+                type: "categories",
+                message: "Please enter a valid categories",
               },
             ]}
           >
@@ -252,6 +264,9 @@ const BlogControlTable = () => {
          Title
       </th>
       <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+         Categories
+      </th>
+      <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
          Content
       </th>
       <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
@@ -271,7 +286,7 @@ const BlogControlTable = () => {
           <tbody className="divide-y divide-gray-700">
             {filteredUsers.map((posts) => (
               <motion.tr
-                key={posts._id}
+                key={posts.id}
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ duration: 0.3 }}
@@ -286,30 +301,33 @@ const BlogControlTable = () => {
                 <td className="px-6 py-4 whitespace-nowrap">
                         {posts.title}    
                 </td>
-
+                <td className="px-6 py-4 whitespace-nowrap">
+                {posts.categories}
+                  </td>
+                 
                 <td className="px-6 py-4 whitespace-nowrap">
                 {posts.content.split(" ").slice(0, 4).join(" ")}...
                   </td>
                  
                 <td className="px-6 py-4 whitespace-nowrap">
                   <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-800 text-blue-100">
-                  {posts?.isApproved ? "Approved" : "Pending"}
+                  {posts?.approverId ? "Approved" : "Pending"}
                    </span>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                 {posts.status}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
-                {posts.approvedBy?.name}
+                {posts.AuthorName}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
                   <button
                     className="text-indigo-400 hover:text-indigo-300 mr-2"
-                    onClick={() => showEditModal(posts._id)}
+                    onClick={() => showEditModal(posts.id)}
                   >
                     Edit
                   </button>
-                  <button className="text-red-400 hover:text-red-300" onClick={() => showModal(posts._id)}>
+                  <button className="text-red-400 hover:text-red-300" onClick={() => showModal(posts.id)}>
                     Delete
                   </button>
                 </td>

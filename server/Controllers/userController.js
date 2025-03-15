@@ -7,7 +7,7 @@ const User = db.User;
 export const createUser = async(req, res) => {
   const user = req.body;
 
-  try {
+  try {0
       const response = await User.create(user);
       
       if(!response) {
