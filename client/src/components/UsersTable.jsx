@@ -43,7 +43,7 @@ const UsersTable = () => {
     try {
       // Uncomment and use your actual delete action:
       // await dispatch(deleteUser(userToDelete));
-      dispatch(deleteUser(userID))
+     await dispatch(deleteUser(userID))
       console.log("Deleting user with ID:");
       await dispatch(getAllUsers());
     } catch (error) {
@@ -158,9 +158,8 @@ const UsersTable = () => {
             .then(async (values) => {
               console.log('values',values)
               await dispatch(editUser(values));  // Ensure editUser completes first
-              dispatch(getAllUsers())
+              await dispatch(getAllUsers())
               hideModal();
-
             })
             .catch((info) => console.error("Validation Failed:", info));
         }

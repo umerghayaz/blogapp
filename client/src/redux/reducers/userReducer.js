@@ -106,9 +106,9 @@ const userSlice = createSlice({
       console.log('edit user',action)
       state.user = action.payload.user;
  
-      state.allUsers = state.allUsers.map((item) =>
-        item._id === action.payload.user._id ? action.payload.user : item
-      );
+      // state.allUsers = state.allUsers.map((item) =>
+      //   item.id === action.payload.user.id ? action.payload.user : item
+      // );
       state.loading = false;
      })
     builder.addCase(editUser.rejected, (state) => {

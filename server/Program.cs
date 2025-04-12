@@ -9,9 +9,11 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowReactApp", policy =>
     {
-        policy.WithOrigins("http://localhost:5173/") // React app origin
+        policy.WithOrigins("http://localhost:5173") // React app origin
               .AllowAnyHeader()
-              .AllowAnyMethod();
+              .AllowAnyMethod()
+              .AllowCredentials(); // 👈 Important for cookies/auth
+
     });
 });
 // Add services to the container

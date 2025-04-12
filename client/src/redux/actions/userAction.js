@@ -99,7 +99,7 @@ export const getAllUsers = createAsyncThunk("getAllUsers", async (data) => {
       "Content-Type": "application/json",
     }}
       );
-    console.log(res.data.users);
+    console.log('hello',res.data.users);
     return res.data.users;
   } catch (error) {
     return isRejectedWithValue(error.response);

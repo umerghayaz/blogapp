@@ -10,6 +10,7 @@ using System.Text;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.Authorization;
 using System.ComponentModel.DataAnnotations;
+using System.Runtime.CompilerServices; // For FormattableStringFactory (Option 1)
 namespace blogapp.Controllers
 
 {
@@ -31,22 +32,93 @@ namespace blogapp.Controllers
 
         // 📌 GET ALL USERS
         [Authorize(Policy = "AdminAccess")] // ✅ Only Admins can read all users
-        [HttpGet]
+        [HttpGet("getAllUser")]
         [EnableRateLimiting("fixed")]  // Apply rate limiting
 
         public async Task<ActionResult<IEnumerable<User>>> GetUsers()
         {
-            return await _context.Users.ToListAsync();
+            try
+            {
+                var sql = @"
+            SELECT 
+                users.id AS Id, 
+                users.username AS name,
+                users.email AS email,
+                users.password AS Password, 
+                users.roleId AS RoleId,
+                roles.Name AS RoleName
+            FROM users
+            INNER JOIN roles ON roles.id = users.roleId
+        ";
+
+                // Get all users using ToListAsync
+                var users = await _context.Database
+                    .SqlQuery<UserWithDetailsDto>(FormattableStringFactory.Create(sql))
+                    .ToListAsync();  // Use ToListAsync instead of FirstOrDefaultAsync to fetch all users
+
+                if (users == null || !users.Any())
+                    return StatusCode(404, new { message = "No Users Found!" });
+
+                // Exclude password and return only necessary fields
+                var userResponses = users.Select(user => new
+                {
+                    user.Id,
+                    user.name,
+                    user.email,
+                    user.RoleId,
+                    user.RoleName
+                }).ToList();
+
+                return StatusCode(200, new { message = "Users fetched successfully", users = userResponses });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "An error occurred during fetching users.", error = ex.Message });
+            }
         }
+
 
         // 📌 GET USER BY ID
         [HttpGet("{id}")]
-        public async Task<ActionResult<User>> GetUserById(int id, [FromBody] User body)
+        public async Task<ActionResult<User>> GetUserById(int id)
         {
 
-            var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == id);
-            return user;
-        }
+         try
+            {
+                var sql = @"
+                    SELECT 
+                        users.id AS Id, 
+                        users.username AS name,
+                        users.email AS email,
+                        users.password AS Password, 
+                        users.roleId AS RoleId,
+                        roles.Name AS RoleName
+                    FROM users
+                    INNER JOIN roles ON roles.id = users.roleId
+                    WHERE users.id = {0}";
+
+                var user = await _context.Database
+                    .SqlQuery<UserWithDetailsDto>(FormattableStringFactory.Create(sql, id))
+                    .FirstOrDefaultAsync();
+
+                // var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == request.Email);
+                if (user == null)
+                    return StatusCode(404, new { message = "User Does Not Exist!" });
+                var userResponse = new
+                {
+                    user.Id,
+                    user.name,
+                    user.email,
+                    user.RoleId,
+                    user.RoleName
+                };
+                return StatusCode(200, new { message = "Login successful", user = userResponse });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "An error occurred during login.", error = ex.Message });
+            }  
+            }
         // 📌 CREATE A NEW USER
         [HttpPost]
         public async Task<ActionResult<User>> CreateUser([FromBody] CreateUserDto dto)
@@ -82,7 +154,7 @@ namespace blogapp.Controllers
         // 📌 UPDATE USER BY ID
         [HttpPut("{id}")]
         [Authorize(Policy = "UpdateUser")]
-        public async Task<IActionResult> UpdateUser(int id, User user)
+        public async Task<IActionResult> UpdateUser(int id,  [FromBody] UserWithDetailsDto user)
         {
             try
             {
@@ -94,18 +166,18 @@ namespace blogapp.Controllers
                 if (existingUser == null)
                     return NotFound(new { message = $"No user found with ID {id}. Please check the ID and try again." });
 
-                if (!string.IsNullOrEmpty(user.Email))
+                if (!string.IsNullOrEmpty(user.email))
                 {
-                    existingUser.Email = user.Email;
+                    existingUser.Email = user.email;
                 }
-                if (!string.IsNullOrEmpty(user.Username))
+                if (!string.IsNullOrEmpty(user.name))
                 {
-                    existingUser.Username = user.Username;
+                    existingUser.Username = user.name;
                 }
-                if (user.RoleId != 0)
-                {
-                    existingUser.RoleId = user.RoleId;
-                }
+                      if (user.RoleId.HasValue)
+        {
+            existingUser.RoleId = user.RoleId.Value;
+        }
                 if (!string.IsNullOrEmpty(user.Password))
                 {
                     existingUser.Password = BCrypt.Net.BCrypt.HashPassword(user.Password);
@@ -124,7 +196,23 @@ namespace blogapp.Controllers
         {
             try
             {
-                var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == request.Email);
+                var sql = @"
+                    SELECT 
+                        users.id AS Id, 
+                        users.username AS name,
+                        users.email AS email,
+                        users.password AS Password, 
+                        users.roleId AS RoleId,
+                        roles.Name AS RoleName
+                    FROM users
+                    INNER JOIN roles ON roles.id = users.roleId
+                    WHERE users.email = {0}";
+
+                var user = await _context.Database
+                    .SqlQuery<UserWithDetailsDto>(FormattableStringFactory.Create(sql, request.Email))
+                    .FirstOrDefaultAsync();
+
+                // var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == request.Email);
                 if (user == null)
                     return StatusCode(404, new { message = "User Does Not Exist!" });
 
@@ -142,7 +230,15 @@ namespace blogapp.Controllers
                     SameSite = SameSiteMode.Strict,
                     Expires = DateTimeOffset.UtcNow.AddHours(1) // Match JWT expiration
                 });
-                return StatusCode(200, new { message = "Login successful", token });
+                var userResponse = new
+                {
+                    user.Id,
+                    user.name,
+                    user.email,
+                    user.RoleId,
+                    user.RoleName
+                };
+                return StatusCode(200, new { message = "Login successful", token = token, user = userResponse });
             }
             catch (Exception ex)
             {
@@ -150,7 +246,8 @@ namespace blogapp.Controllers
             }
         }
 
-        private async Task<string> GenerateJwtToken(User user)
+        private async Task<string> GenerateJwtToken(UserWithDetailsDto user)
+
         {
             var jwtKey = _configuration["Jwt:Key"];
             var issuer = _configuration["Jwt:Issuer"];
@@ -168,7 +265,7 @@ namespace blogapp.Controllers
             var claims = new List<Claim>
     {
         new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
-        new Claim(ClaimTypes.Email, user.Email),
+        new Claim(ClaimTypes.Email, user.email),
         new Claim(ClaimTypes.Role, permissions.RoleName), // ✅ Corrected
     };
             claims.AddRange(permissions.Permissions.Select(p => new Claim("Permission", p))); // ✅ Corrected
@@ -219,6 +316,41 @@ namespace blogapp.Controllers
 
             return result;
         }
+         [HttpPost("logout")]
+    public IActionResult Logout()
+    {
+        var refreshToken = Request.Cookies["AuthToken"];
+
+        if (string.IsNullOrEmpty(refreshToken))
+        {
+            return BadRequest(new { message = "No refresh token found" });
+        }
+
+        try
+        {
+            var tokenHandler = new JwtSecurityTokenHandler();
+            var key = Encoding.ASCII.GetBytes(_configuration["Jwt:Key"]);
+
+            tokenHandler.ValidateToken(refreshToken, new TokenValidationParameters
+            {
+                ValidateIssuerSigningKey = true,
+                IssuerSigningKey = new SymmetricSecurityKey(key),
+                ValidateIssuer = false,
+                ValidateAudience = false,
+                ClockSkew = TimeSpan.Zero
+            }, out SecurityToken validatedToken);
+
+            // Clear cookies
+            Response.Cookies.Delete("AuthToken");
+
+            return Ok(new { message = "Logged out successfully" });
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine("Invalid Refresh Token: " + ex.Message);
+            return BadRequest(new { message = "Invalid refresh token" });
+        }
+    }
         // 📌 DELETE USER BY ID
         [HttpDelete("{id}")]
         [Authorize(Policy = "DeleteUser")] // ✅ Permission-based
@@ -258,4 +390,15 @@ public class UserRolePermissionsDto
 {
     public string RoleName { get; set; }
     public List<string> Permissions { get; set; }
+}
+public class UserWithDetailsDto
+{
+    public int Id { get; set; }
+    public string? name { get; set; }  // Nullable
+    public string? email { get; set; }
+    public string? Password { get; set; } // ✅ New column
+    public int? RoleId { get; set; }
+
+    // Role details from the JOIN
+    public string? RoleName { get; set; }
 }
