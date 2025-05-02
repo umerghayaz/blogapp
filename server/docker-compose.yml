@@ -1,0 +1,17 @@
+version: '3.8'
+services:
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: sqlserver
+    environment:
+      MSSQL_SA_PASSWORD: "yourStrong(!)Password"
+      ACCEPT_EULA: "Y"
+    ports:
+      - "8002:1433"
+    mem_limit: 4g
+    mem_reservation: 2g
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/mssql-tools/bin/sqlcmd -S localhost,8002 -U sa -P 'yourStrong(!)Password' -Q 'SELECT 1'"]
+      interval: 10s
+      timeout: 5s
+      retries: 5

@@ -58,7 +58,8 @@ export const getAllPosts = createAsyncThunk("getAllPosts", async (data) => {
         "status":  data.status,
         "categories": data.categories,
         "featuredImage":  data.featuredImage,
-        "approverId": data.approvedBy
+        "approverId": data.approvedBy,
+        "isApproved":data.isApproved,
       }
       console.log('payload',payload)
       const res =await API.put(`/posts/${data.postID}`,payload,
