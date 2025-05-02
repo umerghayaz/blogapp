@@ -16,15 +16,27 @@ const SingleBlogPage = () => {
   }, [dispatch, id]);
 
   if (loading) {
-    return <div className="flex justify-center items-center h-screen text-lg text-gray-300">Loading...</div>;
+    return (
+      <div className="flex justify-center items-center h-screen text-lg text-gray-300 bg-gradient-to-b from-gray-800 to-gray-900">
+        Loading...
+      </div>
+    );
   }
 
   if (error) {
-    return <div className="text-center text-red-500 text-lg mt-10">Error: {error}</div>;
+    return (
+      <div className="text-center text-red-500 text-lg mt-10">
+        Error: {error}
+      </div>
+    );
   }
 
   if (!post) {
-    return <div className="text-center text-gray-500 text-lg mt-10">Post not found.</div>;
+    return (
+      <div className="text-center text-gray-500 text-lg mt-10">
+        Post not found.
+      </div>
+    );
   }
 
   function formatDate(inputDate) {
@@ -33,48 +45,51 @@ const SingleBlogPage = () => {
   }
 
   return (
-    <div>
-    <div>
-<Header/>
-    </div>
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5 }}
-      className="bg-gray-900 min-h-screen  mx-auto px-6 py-18  shadow-2xl "
-    >
-      <h1 className="text-4xl font-extrabold text-white text-center mb-4">{post.title}</h1>
-      <p className="text-sm text-gray-400 text-center">Published on {formatDate(post.createdAt)}</p>
+    <div className="bg-gradient-to-b from-gray-900 to-black min-h-screen">
+      <Header />
 
- <div className="flex justify-center">
-  <motion.img
-    src={post.featuredImage}
-    alt={post.title}
-    className="h-96 object-cover rounded-2xl mt-6 shadow-lg"
-    initial={{ opacity: 0 }}
-    animate={{ opacity: 1 }}
-    transition={{ duration: 0.8 }}
-  />
-</div>
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="max-w-4xl mx-auto px-6 py-16"
+      >
+        <h1 className="text-5xl font-extrabold text-white text-center mb-6 leading-tight">
+          {post.title}
+        </h1>
 
+        <p className="text-sm text-gray-400 text-center mb-8">
+          Published on {formatDate(post.createdAt)}
+        </p>
 
-      <div className="mt-6 text-lg text-gray-300 leading-relaxed px-4 flex justify-center">
-        {post.content}
-      </div>
+        <div className="flex justify-center">
+          <motion.img
+            src={post.featuredImage}
+            alt={post.title}
+            className="w-full max-h-[500px] object-cover rounded-2xl shadow-2xl"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.8 }}
+          />
+        </div>
 
-      <div className="flex justify-center mt-6">
-        <motion.button
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          onClick={() => navigate("/")}
-          className="w-56 bg-gray-800 px-5 py-4 text-white transition hover:bg-gray-700"        >
-          ← Back to Blog
-        </motion.button>
-      </div>
-    </motion.div>
+        <div className="mt-10 text-lg text-gray-300 leading-loose px-2 md:px-8 text-justify">
+          {post.content}
+        </div>
+
+        <div className="flex justify-center mt-10">
+          <motion.button
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={() => navigate("/")}
+            className="w-52 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 px-6 py-3 rounded-full text-white text-lg font-semibold shadow-lg transition-all duration-300"
+          >
+            ← Back to Blog
+          </motion.button>
+        </div>
+      </motion.div>
     </div>
   );
 };
 
 export default SingleBlogPage;
-

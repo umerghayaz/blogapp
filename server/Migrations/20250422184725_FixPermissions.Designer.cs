@@ -12,8 +12,8 @@ using blogapp.Data;
 namespace blogapp.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20250403173552_AddPostsTable")]
-    partial class AddPostsTable
+    [Migration("20250422184725_FixPermissions")]
+    partial class FixPermissions
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -102,6 +102,9 @@ namespace blogapp.Migrations
                         .HasColumnType("bit")
                         .HasColumnName("isApproved");
 
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
                     b.Property<string>("Status")
                         .IsRequired()
                         .ValueGeneratedOnAdd()
@@ -117,7 +120,7 @@ namespace blogapp.Migrations
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<int>("Views")
+                    b.Property<int?>("Views")
                         .HasColumnType("int");
 
                     b.HasKey("Id");

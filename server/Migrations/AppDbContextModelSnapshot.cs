@@ -99,6 +99,9 @@ namespace blogapp.Migrations
                         .HasColumnType("bit")
                         .HasColumnName("isApproved");
 
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
                     b.Property<string>("Status")
                         .IsRequired()
                         .ValueGeneratedOnAdd()
@@ -114,7 +117,7 @@ namespace blogapp.Migrations
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<int>("Views")
+                    b.Property<int?>("Views")
                         .HasColumnType("int");
 
                     b.HasKey("Id");

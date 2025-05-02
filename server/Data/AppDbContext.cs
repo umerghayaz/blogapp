@@ -15,7 +15,11 @@ namespace blogapp.Data
         public DbSet<Post> Posts { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
+        
         {
+            base.OnModelCreating(modelBuilder);
+
+           
             // Configure RolePermission composite key
             modelBuilder.Entity<RolePermission>()
                 .HasKey(rp => new { rp.RoleId, rp.PermissionId });

@@ -124,9 +124,10 @@ const BlogControlTable = () => {
           form
             .validateFields()
             .then(async(values) => {
-            console.log('values',values,values.status)
+            console.log('values',values,values.status,values.isApproved)
 
              let payload = {
+                "isApproved":values.isApproved,
                 "title": values.title,
                 "content":values.content,
                 "status": values.status,
@@ -273,7 +274,7 @@ const BlogControlTable = () => {
          Approved
       </th>
       <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
-        Status
+      Approver Name
       </th>
       <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
         Approved By
@@ -311,14 +312,14 @@ const BlogControlTable = () => {
                  
                 <td className="px-6 py-4 whitespace-nowrap">
                   <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-800 text-blue-100">
-                  {posts?.approverId ? "Approved" : "Pending"}
+                  {posts?.isApproved  ? "Approved" : "Pending"}
                    </span>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
-                {posts.status}
+                {posts.approverName}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
-                {posts.AuthorName}
+                {posts.authorName}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
                   <button

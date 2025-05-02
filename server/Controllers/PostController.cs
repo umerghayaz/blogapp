@@ -6,10 +6,12 @@ using blogapp.Data;
 using System.Security.Claims;
 using Microsoft.EntityFrameworkCore;
 using System.Runtime.CompilerServices; // For FormattableStringFactory (Option 1)
+      // "DefaultConnection": "Server=localhost\\SQLEXPRESS;Database=MyDatabase;Trusted_Connection=True;TrustServerCertificate=True;"
+
 namespace blogapp.Controllers
 {
     [ApiController]
-    [Route("api/post")]
+    [Route("api/posts")]
     public class PostController : ControllerBase
     {
         private readonly AppDbContext _context;
@@ -20,7 +22,7 @@ namespace blogapp.Controllers
             _context = context;
         }
 
-        [HttpPost("create")]
+        [HttpPost]
         [Authorize(Policy = "CreateUser")] // Assuming CreateUser permission allows post creation
         public async Task<IActionResult> CreatePost([FromBody] PostCreateRequest request)
         {
@@ -55,7 +57,7 @@ namespace blogapp.Controllers
                     .OrderByDescending(p => p.Id)
                     .Select(p => p.Id)
                     .FirstOrDefaultAsync();
-                return Ok(new { message = "Posts retrieved" });
+                return Ok(new { message = "Posts Created" });
 
                 // return CreatedAtAction(nameof(GetPost), new { id = postId }, new { message = "Post created", postId });
             }
@@ -67,9 +69,9 @@ namespace blogapp.Controllers
 
         [HttpGet("{id}")]
         [Authorize(Policy = "ReadUser")]
-        public async Task<IActionResult> GetPost(int id)
+        public async Task<IActionResult> GetPost(int id) 
         {
-            try
+            try 
             {
                 var sql = $@"
             SELECT posts.*, 
@@ -101,7 +103,7 @@ namespace blogapp.Controllers
             }
         }
 
-        [HttpGet("all")]
+        [HttpGet]
         [AllowAnonymous] // Publicly accessible published posts
         public async Task<IActionResult> GetAllPosts()
         {
@@ -136,6 +138,7 @@ namespace blogapp.Controllers
         {
               try
             {
+                Console.WriteLine(request);
                 if (request == null)
                     return BadRequest(new { message = "Invalid user data." });
                 // Try to find the existing request
@@ -154,7 +157,7 @@ namespace blogapp.Controllers
                 }
                 if (!string.IsNullOrEmpty(request.Categories))
                 {
-                    existingPost.Content = request.Categories;
+                    existingPost.Categories = request.Categories;
                 }
                  if (!string.IsNullOrEmpty(request.FeaturedImage))
                 {
@@ -173,6 +176,10 @@ namespace blogapp.Controllers
                 {
                     existingPost.Categories = request.Categories;
                 }
+                if (request.IsApproved){
+                    existingPost.IsApproved = request.IsApproved;
+                }
+                
                 await _context.SaveChangesAsync();
 
                 return Ok(new { message = " Post Updated Successfully" });
@@ -183,23 +190,64 @@ namespace blogapp.Controllers
             }
         }
 
-        [HttpDelete("{id}")]
-        [Authorize(Policy = "DeleteUser")]
-        public async Task<IActionResult> DeletePost(int id)
-        {
-             try
-            {
-                var post = await _context.Posts.FindAsync(id);
-                if (post == null) return NotFound(new { message = $"No post found with ID {id}. Please check the ID and try again." });
-                _context.Posts.Remove(post);
-                await _context.SaveChangesAsync();
-                return StatusCode(200, new { message = "Post  Deleted Successfully" });
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new { message = "An error occurred while deleting the post.", error = ex.Message });
-            }
-        }
+       [HttpDelete("{id}")]
+[Authorize(Policy = "DeleteUser")]
+public async Task<IActionResult> DeletePost(int id)
+{
+var postEntity = await _context.Posts
+    .IgnoreQueryFilters() // Only if soft delete is in place
+    .FirstOrDefaultAsync(p => p.Id == id);
+
+if (postEntity == null)
+    return NotFound(new { message = "Post not found" });
+
+try
+{
+    
+    _context.Posts.Remove(postEntity);
+    await _context.SaveChangesAsync();
+    await _context.Database.ExecuteSqlRawAsync("DELETE FROM posts WHERE Id = {0}", id);
+    return Ok(new { message = "Post deleted successfully" });
+}
+catch (DbUpdateException ex)
+{
+    // Handle database-specific errors (e.g., foreign key violations)
+    return StatusCode(500, new { message = "Failed to delete post. Possible foreign key constraint violation.", error = ex.InnerException?.Message });
+}
+catch (Exception ex)
+{
+    // Handle other unexpected errors
+    return StatusCode(500, new { message = "An error occurred while deleting the post.", error = ex.Message });
+}
+}
+[HttpPatch("restore/{id}")]
+// [Authorize(Policy = "RestorePost")] // optional policy
+public async Task<IActionResult> RestorePost(int id)
+{
+    try
+    {
+        var post = await _context.Posts
+            .IgnoreQueryFilters() // So you can fetch soft-deleted posts
+            .FirstOrDefaultAsync(p => p.Id == id);
+
+        if (post == null)
+            return NotFound(new { message = $"No post found with ID {id}." });
+
+        if (!post.IsDeleted)
+            return BadRequest(new { message = "Post is not deleted." });
+
+        post.IsDeleted = false;
+        _context.Posts.Update(post);
+        await _context.SaveChangesAsync();
+
+        return Ok(new { message = "Post restored successfully." });
+    }
+    catch (Exception ex)
+    {
+        return StatusCode(500, new { message = "An error occurred while restoring the post.", error = ex.Message });
+    }
+}
+
 
         // [HttpPost("{id}/approve")]
         // [Authorize(Policy = "AdminAccess")] // Only admins can approve
@@ -261,6 +309,7 @@ namespace blogapp.Controllers
         public string? FeaturedImage { get; set; }
         public int? ApproverId { get; set; }
         public string Status { get; set; } = "draft";
+        public bool IsApproved { get; set; }
 
     }
 
@@ -268,4 +317,15 @@ namespace blogapp.Controllers
     {
         public string Status { get; set; } // "draft", "published", "archived"
     }
+    public class Post
+{
+    public int Id { get; set; }
+    public string Title { get; set; }
+    public string Content { get; set; }
+    
+    // Soft delete flag
+    public bool IsDeleted { get; set; } = false;
+
+    // ... other properties
+}
 }

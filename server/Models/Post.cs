@@ -44,5 +44,8 @@ namespace blogapp.Models
         public DateTime UpdatedAt { get; set; }
         [Column("destroyTime")]
         public DateTime? DeletedAt { get; set; }
+         public bool IsDeleted { get; set; } = false;
+         
+
     }
 }

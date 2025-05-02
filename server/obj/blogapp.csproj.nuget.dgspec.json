@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "D:\\React_Projects\\blog\\server\\blogapp.csproj": {}
+    "D:\\dotnet\\blog\\blogapp\\server\\blogapp.csproj": {}
   },
   "projects": {
-    "D:\\React_Projects\\blog\\server\\blogapp.csproj": {
+    "D:\\dotnet\\blog\\blogapp\\server\\blogapp.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "D:\\React_Projects\\blog\\server\\blogapp.csproj",
+        "projectUniqueName": "D:\\dotnet\\blog\\blogapp\\server\\blogapp.csproj",
         "projectName": "blogapp",
-        "projectPath": "D:\\React_Projects\\blog\\server\\blogapp.csproj",
+        "projectPath": "D:\\dotnet\\blog\\blogapp\\server\\blogapp.csproj",
         "packagesPath": "C:\\Users\\Yousuf Traders\\.nuget\\packages\\",
-        "outputPath": "D:\\React_Projects\\blog\\server\\obj\\",
+        "outputPath": "D:\\dotnet\\blog\\blogapp\\server\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "C:\\Users\\Yousuf Traders\\AppData\\Roaming\\NuGet\\NuGet.Config"
